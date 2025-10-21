@@ -8,89 +8,135 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Agriculture-themed design system */
+    --background: 140 20% 98%;
+    --foreground: 140 80% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 140 80% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 140 80% 8%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* SoilSati primary - rich green gradient */
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 142 76% 45%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Healthy vegetation - success green */
+    --secondary: 140 50% 88%;
+    --secondary-foreground: 140 80% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Warning yellow - monitor status */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Muted earth tones */
+    --muted: 140 15% 92%;
+    --muted-foreground: 140 20% 40%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* AI Advisor accent - purple */
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    /* Disease/risk red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
+    /* Info blue - weather */
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Borders and inputs - soft green-gray */
+    --border: 140 15% 85%;
+    --input: 140 15% 85%;
+    --ring: 142 76% 36%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --radius: 0.75rem;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 45%));
+    --gradient-hero: linear-gradient(180deg, hsl(140 30% 95%), hsl(140 20% 98%));
+    --gradient-accent: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 68%));
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* Shadows */
+    --shadow-soft: 0 2px 8px hsl(140 30% 20% / 0.08);
+    --shadow-elevated: 0 8px 24px hsl(140 30% 20% / 0.12);
+    --shadow-glow: 0 0 24px hsl(142 76% 45% / 0.3);
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (if needed) */
+    --sidebar-background: 140 30% 95%;
+    --sidebar-foreground: 140 80% 15%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 140 20% 90%;
+    --sidebar-accent-foreground: 140 80% 15%;
+    --sidebar-border: 140 15% 85%;
+    --sidebar-ring: 142 76% 36%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 140 30% 8%;
+    --foreground: 140 20% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 140 25% 10%;
+    --card-foreground: 140 20% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 140 25% 10%;
+    --popover-foreground: 140 20% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 142 76% 45%;
+    --primary-foreground: 140 30% 8%;
+    --primary-glow: 142 76% 55%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 140 20% 18%;
+    --secondary-foreground: 140 20% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --success: 142 71% 50%;
+    --success-foreground: 140 30% 8%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 140 30% 8%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --muted: 140 20% 18%;
+    --muted-foreground: 140 15% 65%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --accent: 262 83% 65%;
+    --accent-foreground: 140 30% 8%;
+
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 140 30% 8%;
+
+    --info: 217 91% 65%;
+    --info-foreground: 140 30% 8%;
+
+    --border: 140 20% 20%;
+    --input: 140 20% 20%;
+    --ring: 142 76% 45%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(142 76% 40%), hsl(142 76% 50%));
+    --gradient-hero: linear-gradient(180deg, hsl(140 30% 10%), hsl(140 30% 8%));
+    --gradient-accent: linear-gradient(135deg, hsl(262 83% 60%), hsl(262 83% 70%));
+
+    --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 24px hsl(142 76% 50% / 0.4);
+
+    --sidebar-background: 140 25% 10%;
+    --sidebar-foreground: 140 20% 95%;
+    --sidebar-primary: 142 76% 45%;
+    --sidebar-primary-foreground: 140 30% 8%;
+    --sidebar-accent: 140 20% 18%;
+    --sidebar-accent-foreground: 140 20% 95%;
+    --sidebar-border: 140 20% 20%;
+    --sidebar-ring: 142 76% 45%;
   }
 }
 
