@@ -36,7 +36,11 @@ export const SoilSatiView = () => {
       <div className="px-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">My Fields</h2>
-          <Button size="sm" className="bg-gradient-primary">
+          <Button 
+            size="sm" 
+            className="bg-gradient-primary"
+            onClick={() => window.location.href = '/soilsati/map-field'}
+          >
             <Plus className="w-4 h-4 mr-1" />
             Add Field
           </Button>

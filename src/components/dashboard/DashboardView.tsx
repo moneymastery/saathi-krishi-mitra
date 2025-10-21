@@ -79,7 +79,7 @@ export const DashboardView = () => {
           </Button>
 
           <Button 
-            onClick={() => navigate("/soilsati")}
+            onClick={() => navigate("/soilsati/map-field")}
             variant="outline"
             className="w-full h-auto py-4 justify-start border-primary/20 hover:bg-primary/5"
           >

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import SoilSati from "./pages/SoilSati";
+import FieldMapping from "./pages/FieldMapping";
 import CropGuide from "./pages/CropGuide";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -21,6 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/soilsati" element={<SoilSati />} />
+          <Route path="/soilsati/map-field" element={<FieldMapping />} />
           <Route path="/guide" element={<CropGuide />} />
           <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
