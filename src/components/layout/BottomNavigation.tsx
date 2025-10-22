@@ -1,11 +1,11 @@
-import { Home, Sprout, BookOpen, User } from "lucide-react";
+import { Sprout, Camera, ShoppingBag, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { path: "/", icon: Home, label: "Home" },
   { path: "/soilsati", icon: Sprout, label: "SoilSati" },
-  { path: "/guide", icon: BookOpen, label: "Grok Guide" },
+  { path: "/disease", icon: Camera, label: "Disease" },
+  { path: "/marketplace", icon: ShoppingBag, label: "Market" },
   { path: "/profile", icon: User, label: "Profile" },
 ];
 

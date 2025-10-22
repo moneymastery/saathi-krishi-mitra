@@ -21,20 +21,27 @@ interface FieldDetailsFormProps {
 }
 
 const cropTypes = [
-  "Rice",
-  "Wheat",
-  "Maize",
-  "Tomato",
-  "Potato",
-  "Onion",
-  "Cotton",
-  "Sugarcane",
-  "Soybean",
-  "Chickpea",
-  "Lentil",
-  "Mango",
-  "Banana",
-  "Other",
+  "Rice", "Wheat", "Maize", "Cotton", "Sugarcane", "Potato", "Tomato", 
+  "Onion", "Soybean", "Mustard", "Chickpea", "Pigeon Pea", "Barley",
+  "Sorghum", "Millet", "Lentil", "Groundnut", "Sunflower", "Other"
+];
+
+const irrigationMethods = [
+  "Drip Irrigation",
+  "Sprinkler",
+  "Flood/Basin",
+  "Furrow",
+  "Rainfed",
+  "Other"
+];
+
+const wateringFrequencies = [
+  "Daily",
+  "Every 2 days",
+  "Every 3 days",
+  "Twice a week",
+  "Weekly",
+  "As needed"
 ];
 
 export const FieldDetailsForm = ({ coordinates, area, onSave, onBack }: FieldDetailsFormProps) => {
@@ -42,6 +49,9 @@ export const FieldDetailsForm = ({ coordinates, area, onSave, onBack }: FieldDet
   const [cropType, setCropType] = useState("");
   const [variety, setVariety] = useState("");
   const [sowingDate, setSowingDate] = useState("");
+  const [expectedHarvestDate, setExpectedHarvestDate] = useState("");
+  const [irrigationMethod, setIrrigationMethod] = useState("");
+  const [wateringFrequency, setWateringFrequency] = useState("");
 
   const handleSave = () => {
     if (!fieldName.trim()) {
@@ -56,12 +66,27 @@ export const FieldDetailsForm = ({ coordinates, area, onSave, onBack }: FieldDet
       toast.error("Please select a sowing date");
       return;
     }
+    if (!expectedHarvestDate) {
+      toast.error("Please select expected harvest date");
+      return;
+    }
+    if (!irrigationMethod) {
+      toast.error("Please select irrigation method");
+      return;
+    }
+    if (!wateringFrequency) {
+      toast.error("Please select watering frequency");
+      return;
+    }
 
     const fieldData = {
       name: fieldName,
       cropType,
       variety: variety || "Not specified",
       sowingDate,
+      expectedHarvestDate,
+      irrigationMethod,
+      wateringFrequency,
       coordinates,
       area,
     };
@@ -168,6 +193,59 @@ export const FieldDetailsForm = ({ coordinates, area, onSave, onBack }: FieldDet
             <p className="text-xs text-muted-foreground mt-1">
               When was the crop planted?
             </p>
+          </div>
+
+          <div>
+            <Label htmlFor="expectedHarvestDate" className="text-sm font-medium text-foreground mb-2 block">
+              Expected Harvest Date *
+            </Label>
+            <Input
+              id="expectedHarvestDate"
+              type="date"
+              value={expectedHarvestDate}
+              onChange={(e) => setExpectedHarvestDate(e.target.value)}
+              className="h-11"
+              min={sowingDate || new Date().toISOString().split("T")[0]}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              When do you expect to harvest?
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="irrigationMethod" className="text-sm font-medium text-foreground mb-2 block">
+              Irrigation Method *
+            </Label>
+            <Select value={irrigationMethod} onValueChange={setIrrigationMethod}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Select irrigation method" />
+              </SelectTrigger>
+              <SelectContent>
+                {irrigationMethods.map((method) => (
+                  <SelectItem key={method} value={method}>
+                    {method}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="wateringFrequency" className="text-sm font-medium text-foreground mb-2 block">
+              Watering Frequency *
+            </Label>
+            <Select value={wateringFrequency} onValueChange={setWateringFrequency}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Select watering frequency" />
+              </SelectTrigger>
+              <SelectContent>
+                {wateringFrequencies.map((freq) => (
+                  <SelectItem key={freq} value={freq}>
+                    {freq}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </Card>
 
