@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Volume2, Camera, TrendingUp, MapPin } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { VegetationIndicesGrid } from "./VegetationIndicesGrid";
 import { FieldHealthMap } from "./FieldHealthMap";
+import { YieldPredictionView } from "./YieldPredictionView";
 
 // Mock field data - will be replaced with real Supabase data
 const mockFieldData = {
@@ -22,11 +24,20 @@ const mockFieldData = {
   health: {
     ndvi: 0.67,
     msavi: 0.60,
+    msavi2: 0.62,
     ndre: 0.49,
     ndmi: 0.24,
+    ndwi: 0.35,
+    rsm: 0.42,
     rvi: 2.40,
     soc_vis: 0.35,
-    status: "healthy"
+    status: "healthy",
+    
+    // NPK (optional - only show if confidence > 0.7)
+    nitrogen: 2.8,
+    phosphorus: 0.4,
+    potassium: 1.9,
+    npk_confidence: 0.75,
   },
   quadrants: [
     { id: "q1", name: "North-West", ndvi: 0.72, status: "healthy" as const },
@@ -151,20 +162,31 @@ export const FieldDetailsDashboard = () => {
         </Button>
 
         {canPredictYield ? (
-          <Button
-            className="w-full bg-gradient-to-r from-success to-success/80 hover:opacity-90"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            📈 Predict Yield (Unlocked!)
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="w-full bg-gradient-to-r from-success to-success/80 hover:opacity-90">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                📈 Predict Yield (Unlocked!)
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Yield Prediction - {field.name}</DialogTitle>
+              </DialogHeader>
+              <YieldPredictionView 
+                fieldId={field.id}
+                fieldCoordinates={field.coordinates.map(c => `${c[0]},${c[1]}`).join(',')}
+                cropType={field.cropType}
+                sowingDate={field.sowingDate}
+                varietyName={field.variety}
+                locationName={field.name}
+              />
+            </DialogContent>
+          </Dialog>
         ) : (
-          <Button
-            disabled
-            variant="outline"
-            className="w-full"
-          >
+          <Button disabled variant="outline" className="w-full">
             <TrendingUp className="w-4 h-4 mr-2" />
-            🔒 Predict Yield (Available at {harvestDays * 0.85}% growth - Day {Math.ceil(harvestDays * 0.85)})
+            🔒 Predict Yield (Day {Math.ceil(harvestDays * 0.85)})
           </Button>
         )}
       </div>
