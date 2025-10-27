@@ -8,6 +8,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { VegetationIndicesGrid } from "./VegetationIndicesGrid";
 import { FieldHealthMap } from "./FieldHealthMap";
 import { YieldPredictionView } from "./YieldPredictionView";
+import { FieldTimeline } from "./FieldTimeline";
+import { AudioReportPlayer } from "./AudioReportPlayer";
+import { ExportShareDialog } from "./ExportShareDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Share2, Download } from "lucide-react";
+import { Field, FieldEvent } from "@/types/field";
 
 // Mock field data - will be replaced with real Supabase data
 const mockFieldData = {
@@ -51,6 +57,9 @@ export const FieldDetailsDashboard = () => {
   const navigate = useNavigate();
   const { fieldId } = useParams();
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const field = mockFieldData; // Replace with actual data fetch
 
@@ -92,8 +101,18 @@ export const FieldDetailsDashboard = () => {
         </div>
       </header>
 
-      {/* Field Summary Card */}
+      {/* Tabs */}
       <div className="px-6 py-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="audio">Audio</TabsTrigger>
+            <TabsTrigger value="export">Share</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-4 space-y-4">
+            {/* Field Summary */}
         <Card className="p-4 bg-card shadow-soft mb-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -189,7 +208,37 @@ export const FieldDetailsDashboard = () => {
             🔒 Predict Yield (Day {Math.ceil(harvestDays * 0.85)})
           </Button>
         )}
+          </TabsContent>
+
+          <TabsContent value="timeline">
+            <FieldTimeline 
+              fieldId={field.id}
+              events={[]}
+              onAddEvent={(event) => console.log("Add event:", event)}
+            />
+          </TabsContent>
+
+          <TabsContent value="audio">
+            <AudioReportPlayer field={field as any} />
+          </TabsContent>
+
+          <TabsContent value="export">
+            <div className="space-y-3">
+              <Button onClick={() => setExportDialogOpen(true)} className="w-full" variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Export Field Data
+              </Button>
+              <Button onClick={() => setShareDialogOpen(true)} className="w-full">
+                <Share2 className="w-4 h-4 mr-2" />
+                Share Report
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <ExportShareDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} field={field as any} mode="export" />
+      <ExportShareDialog open={shareDialogOpen} onOpenChange={setShareDialogOpen} field={field as any} mode="share" />
     </div>
   );
 };
