@@ -149,29 +149,28 @@ export const FieldDetailsDashboard = () => {
             </Button>
           </div>
         </Card>
-      </div>
 
-      {/* Field Health Map with Quadrants */}
-      <div className="px-6 mb-4">
+        {/* Field Health Map with Quadrants */}
+        <div className="px-6 mb-4">
         <FieldHealthMap 
           coordinates={field.coordinates}
           quadrants={field.quadrants}
           playAudio={playAudio}
           playingAudio={playingAudio}
         />
-      </div>
+        </div>
 
-      {/* Vegetation Indices */}
-      <div className="px-6 mb-4">
+        {/* Vegetation Indices */}
+        <div className="px-6 mb-4">
         <VegetationIndicesGrid 
           indices={field.health}
           playAudio={playAudio}
           playingAudio={playingAudio}
         />
-      </div>
+        </div>
 
-      {/* Action Buttons */}
-      <div className="px-6 space-y-3">
+        {/* Action Buttons */}
+        <div className="px-6 space-y-3">
         <Button
           onClick={() => navigate("/disease")}
           className="w-full bg-gradient-to-r from-destructive to-destructive/80 hover:opacity-90"
@@ -208,7 +207,8 @@ export const FieldDetailsDashboard = () => {
             🔒 Predict Yield (Day {Math.ceil(harvestDays * 0.85)})
           </Button>
         )}
-          </TabsContent>
+        </div>
+      </TabsContent>
 
           <TabsContent value="timeline">
             <FieldTimeline 
