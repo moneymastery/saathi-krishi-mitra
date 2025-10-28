@@ -1,12 +1,48 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { MapContainer, TileLayer, useMapEvents, Marker, Polyline, Polygon, useMap } from "react-leaflet";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Undo, Trash2, CheckCircle } from "lucide-react";
+import { Undo, Trash2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import * as turf from "@turf/turf";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix for default marker icons
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 interface PointAndPinMapProps {
   onComplete: (coordinates: [number, number][], area: number) => void;
+}
+
+function MapClickHandler({ onAddPoint }: { onAddPoint: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onAddPoint(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+function LocationFinder() {
+  const map = useMap();
+
+  useState(() => {
+    map.locate({ setView: true, maxZoom: 16 });
+  });
+
+  useMapEvents({
+    locationfound: (e) => {
+      map.flyTo(e.latlng, 16);
+    },
+  });
+
+  return null;
 }
 
 export const PointAndPinMap = ({ onComplete }: PointAndPinMapProps) => {
@@ -18,7 +54,6 @@ export const PointAndPinMap = ({ onComplete }: PointAndPinMapProps) => {
     setPoints(newPoints);
     toast.success(`Point ${newPoints.length} added`);
 
-    // Calculate area if we have at least 3 points
     if (newPoints.length >= 3) {
       calculateArea(newPoints);
     }
@@ -28,9 +63,8 @@ export const PointAndPinMap = ({ onComplete }: PointAndPinMapProps) => {
     if (coords.length < 3) return;
 
     try {
-      // Close the polygon by adding first point at the end
       const closedCoords = [...coords, coords[0]];
-      const polygon = turf.polygon([[...closedCoords.map(c => [c[1], c[0]])]]);
+      const polygon = turf.polygon([[...closedCoords.map((c) => [c[1], c[0]])]]);
       const areaInSqMeters = turf.area(polygon);
       const areaInHectares = areaInSqMeters / 10000;
       setArea(areaInHectares);
@@ -66,75 +100,58 @@ export const PointAndPinMap = ({ onComplete }: PointAndPinMapProps) => {
     onComplete(points, area);
   };
 
-  // Simulate map click for demo (replace with actual map integration)
-  const handleDemoClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Convert to mock lat/lng (in real app, use map's pixel-to-latlng)
-    const lat = 28.368717 + (y / rect.height - 0.5) * 0.01;
-    const lng = 77.540933 + (x / rect.width - 0.5) * 0.01;
-    
-    handleMapClick(lat, lng);
-  };
+  const leafletPoints = points.map((p) => [p[0], p[1]] as [number, number]);
+  const closedPoints = points.length >= 3 ? [...leafletPoints, leafletPoints[0]] : leafletPoints;
 
   return (
     <div className="space-y-4">
       <Card className="p-4 bg-info/10 border-info">
         <p className="text-sm text-info-foreground">
-          📍 <strong>Tap at each corner</strong> of your field to drop boundary points. Double-tap to finish.
+          📍 <strong>Tap at each corner</strong> of your field to drop boundary points.
         </p>
       </Card>
 
-      {/* Map Area */}
-      <Card className="relative overflow-hidden" style={{ height: "400px" }}>
-        <div
-          onClick={handleDemoClick}
-          onDoubleClick={completeMapping}
-          className="w-full h-full bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 cursor-crosshair relative"
+      {/* Map Container */}
+      <Card className="overflow-hidden shadow-elevated relative">
+        <MapContainer
+          center={[20.5937, 78.9629]}
+          zoom={13}
+          style={{ height: "450px", width: "100%" }}
+          className="z-0"
         >
-          {/* Mock Map Background */}
-          <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
-            {points.length === 0 ? "Tap to add first point" : "Tap to add more points"}
-          </div>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <LocationFinder />
+          <MapClickHandler onAddPoint={handleMapClick} />
 
-          {/* Points */}
-          {points.map((point, idx) => (
-            <div
-              key={idx}
-              className="absolute w-3 h-3 bg-primary rounded-full border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 animate-in zoom-in"
-              style={{
-                left: `${((point[1] - 77.535933) / 0.01 + 0.5) * 100}%`,
-                top: `${((point[0] - 28.363717) / 0.01 + 0.5) * 100}%`,
-              }}
-            >
-              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded whitespace-nowrap">
-                {idx + 1}
-              </div>
-            </div>
+          {/* Markers for each point */}
+          {leafletPoints.map((pos, idx) => (
+            <Marker key={idx} position={pos} />
           ))}
 
           {/* Lines connecting points */}
-          {points.length > 1 && (
-            <svg className="absolute inset-0 w-full h-full pointer-events-none">
-              <polyline
-                points={points.map((p, idx) => {
-                  const x = ((p[1] - 77.535933) / 0.01 + 0.5) * 100;
-                  const y = ((p[0] - 28.363717) / 0.01 + 0.5) * 100;
-                  return `${x}%,${y}%`;
-                }).join(' ')}
-                fill="none"
-                stroke="hsl(var(--primary))"
-                strokeWidth="2"
-                strokeDasharray="5,5"
-              />
-            </svg>
+          {points.length >= 2 && (
+            <Polyline positions={closedPoints} color="#10b981" weight={3} dashArray="5, 10" />
           )}
-        </div>
+
+          {/* Filled polygon */}
+          {points.length >= 3 && (
+            <Polygon
+              positions={closedPoints}
+              pathOptions={{
+                color: "#10b981",
+                fillColor: "#10b981",
+                fillOpacity: 0.3,
+                weight: 3,
+              }}
+            />
+          )}
+        </MapContainer>
 
         {/* Toolbar */}
-        <div className="absolute top-4 right-4 flex gap-2">
+        <div className="absolute top-20 right-4 flex flex-col gap-2 z-[1000]">
           <Button
             size="sm"
             variant="outline"
@@ -166,29 +183,21 @@ export const PointAndPinMap = ({ onComplete }: PointAndPinMapProps) => {
           {area > 0 && (
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Estimated Area</p>
-              <p className="text-2xl font-bold text-success">{area.toFixed(2)} ha</p>
+              <p className="text-2xl font-bold text-success">{area.toFixed(3)} ha</p>
             </div>
           )}
         </div>
       </Card>
 
-      {/* Action Buttons */}
-      <div className="flex gap-2">
-        <Button
-          onClick={completeMapping}
-          disabled={points.length < 3}
-          className="flex-1 bg-gradient-to-r from-success to-success/80"
-        >
-          <CheckCircle className="w-4 h-4 mr-2" />
-          Complete Boundary ({points.length} points)
-        </Button>
-      </div>
-
-      <Card className="p-3 bg-muted/30">
-        <p className="text-xs text-muted-foreground">
-          ℹ️ In the full app, this will use an interactive map (Google Maps/OpenStreetMap) for precise point placement.
-        </p>
-      </Card>
+      {/* Action Button */}
+      <Button
+        onClick={completeMapping}
+        disabled={points.length < 3}
+        className="w-full h-12 bg-gradient-to-r from-success to-success/80"
+      >
+        <CheckCircle className="w-4 h-4 mr-2" />
+        Complete Boundary ({points.length} points)
+      </Button>
     </div>
   );
 };

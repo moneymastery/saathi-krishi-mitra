@@ -1,290 +1,200 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
+import { MapContainer, TileLayer, useMapEvents, Polyline, Polygon, useMap } from "react-leaflet";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MapPin, Save, Trash2, Info } from "lucide-react";
+import { Save, Trash2, Undo } from "lucide-react";
 import { toast } from "sonner";
-import mapboxgl from "mapbox-gl";
 import * as turf from "@turf/turf";
-import "mapbox-gl/dist/mapbox-gl.css";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix for default marker icons in Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 interface DrawOnMapProps {
   onComplete: (coordinates: [number, number][], area: number) => void;
 }
 
-export const DrawOnMap = ({ onComplete }: DrawOnMapProps) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState("");
-  const [isMapReady, setIsMapReady] = useState(false);
-  const [coordinates, setCoordinates] = useState<[number, number][]>([]);
-  const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
+function MapClickHandler({ onAddPoint }: { onAddPoint: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => {
+      onAddPoint(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
 
-  useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
+function LocationFinder() {
+  const map = useMap();
+
+  useState(() => {
+    map.locate({ setView: true, maxZoom: 16 });
+  });
+
+  useMapEvents({
+    locationfound: (e) => {
+      map.flyTo(e.latlng, 16);
+    },
+  });
+
+  return null;
+}
+
+export const DrawOnMap = ({ onComplete }: DrawOnMapProps) => {
+  const [points, setPoints] = useState<[number, number][]>([]);
+  const [area, setArea] = useState(0);
+
+  const handleAddPoint = (lat: number, lng: number) => {
+    const newPoints = [...points, [lat, lng] as [number, number]];
+    setPoints(newPoints);
+    toast.success(`Point ${newPoints.length} added`);
+
+    if (newPoints.length >= 3) {
+      calculateArea(newPoints);
+    }
+  };
+
+  const calculateArea = (coords: [number, number][]) => {
+    if (coords.length < 3) return;
 
     try {
-      mapboxgl.accessToken = mapboxToken;
-
-      // Get user location or default to India
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          initializeMap([position.coords.longitude, position.coords.latitude]);
-        },
-        () => {
-          // Default to center of India
-          initializeMap([78.9629, 20.5937]);
-        }
-      );
+      const closedCoords = [...coords, coords[0]];
+      const polygon = turf.polygon([[...closedCoords.map((c) => [c[1], c[0]])]]);
+      const areaInSqMeters = turf.area(polygon);
+      const areaInHectares = areaInSqMeters / 10000;
+      setArea(areaInHectares);
     } catch (error) {
-      console.error("Map initialization error:", error);
-      toast.error("Failed to initialize map. Please check your token.");
+      console.error("Error calculating area:", error);
     }
-
-    return () => {
-      map.current?.remove();
-    };
-  }, [mapboxToken]);
-
-  const initializeMap = (center: [number, number]) => {
-    if (!mapContainer.current) return;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/satellite-streets-v12",
-      center: center,
-      zoom: 15,
-    });
-
-    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
-    map.current.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true,
-      }),
-      "top-right"
-    );
-
-    map.current.on("load", () => {
-      setIsMapReady(true);
-      toast.success("Map loaded! Tap to add boundary points.");
-    });
-
-    // Add click handler for drawing
-    map.current.on("click", (e) => {
-      const coord: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-      addPoint(coord);
-    });
   };
 
-  const addPoint = (coord: [number, number]) => {
-    if (!map.current) return;
-
-    const newCoords = [...coordinates, coord];
-    setCoordinates(newCoords);
-
-    // Add marker
-    const marker = new mapboxgl.Marker({ color: "#10b981" })
-      .setLngLat(coord)
-      .addTo(map.current);
-
-    setMarkers((prev) => [...prev, marker]);
-
-    // Draw line if we have at least 2 points
-    if (newCoords.length >= 2) {
-      drawPolygon(newCoords);
+  const undoLastPoint = () => {
+    if (points.length === 0) return;
+    const newPoints = points.slice(0, -1);
+    setPoints(newPoints);
+    if (newPoints.length >= 3) {
+      calculateArea(newPoints);
+    } else {
+      setArea(0);
     }
-
-    toast.success(`Point ${newCoords.length} added`);
+    toast.info("Last point removed");
   };
 
-  const drawPolygon = (coords: [number, number][]) => {
-    if (!map.current) return;
-
-    // Remove existing polygon if any
-    if (map.current.getSource("field-polygon")) {
-      map.current.removeLayer("field-polygon-fill");
-      map.current.removeLayer("field-polygon-line");
-      map.current.removeSource("field-polygon");
-    }
-
-    // Close the polygon for display
-    const displayCoords = coords.length >= 3 ? [...coords, coords[0]] : coords;
-
-    // Create appropriate GeoJSON based on number of points
-    const geojsonData = coords.length >= 3
-      ? {
-          type: "Feature" as const,
-          geometry: {
-            type: "Polygon" as const,
-            coordinates: [displayCoords],
-          },
-          properties: {},
-        }
-      : {
-          type: "Feature" as const,
-          geometry: {
-            type: "LineString" as const,
-            coordinates: displayCoords,
-          },
-          properties: {},
-        };
-
-    map.current.addSource("field-polygon", {
-      type: "geojson",
-      data: geojsonData,
-    });
-
-    if (coords.length >= 3) {
-      map.current.addLayer({
-        id: "field-polygon-fill",
-        type: "fill",
-        source: "field-polygon",
-        paint: {
-          "fill-color": "#10b981",
-          "fill-opacity": 0.3,
-        },
-      });
-    }
-
-    map.current.addLayer({
-      id: "field-polygon-line",
-      type: "line",
-      source: "field-polygon",
-      paint: {
-        "line-color": "#10b981",
-        "line-width": 3,
-      },
-    });
-  };
-
-  const clearMap = () => {
-    if (!map.current) return;
-
-    // Remove markers
-    markers.forEach((marker) => marker.remove());
-    setMarkers([]);
-
-    // Remove polygon
-    if (map.current.getSource("field-polygon")) {
-      map.current.removeLayer("field-polygon-fill");
-      map.current.removeLayer("field-polygon-line");
-      map.current.removeSource("field-polygon");
-    }
-
-    setCoordinates([]);
-    toast.success("Map cleared");
+  const clearAll = () => {
+    setPoints([]);
+    setArea(0);
+    toast.info("All points cleared");
   };
 
   const completeMapping = () => {
-    if (coordinates.length < 3) {
-      toast.error("Please add at least 3 points to create a field boundary");
+    if (points.length < 3) {
+      toast.error("Please add at least 3 points to create a boundary");
       return;
     }
 
-    // Close the polygon
-    const closedCoordinates = [...coordinates, coordinates[0]];
-
-    // Calculate area
-    const polygon = turf.polygon([closedCoordinates]);
-    const areaInSqMeters = turf.area(polygon);
-    const areaInHectares = areaInSqMeters / 10000;
-
-    toast.success(`Field mapped! Area: ${areaInHectares.toFixed(2)} hectares`);
-    onComplete(closedCoordinates, areaInHectares);
+    onComplete(points, area);
   };
 
-  if (!mapboxToken) {
-    return (
-      <Card className="p-6 bg-card shadow-soft">
-        <div className="flex items-start gap-3 mb-4">
-          <Info className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">Mapbox Token Required</h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              To use the interactive map, you need a free Mapbox token. Get yours at{" "}
-              <a
-                href="https://mapbox.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
-                mapbox.com
-              </a>
-            </p>
-          </div>
-        </div>
-        <Input
-          placeholder="Paste your Mapbox public token here"
-          value={mapboxToken}
-          onChange={(e) => setMapboxToken(e.target.value)}
-          className="mb-3"
-        />
-        <p className="text-xs text-muted-foreground">
-          Note: In production, this token will be securely stored in your backend.
-        </p>
-      </Card>
-    );
-  }
+  // Convert lat/lng to leaflet format [lat, lng]
+  const leafletPoints = points.map((p) => [p[0], p[1]] as [number, number]);
+  const closedPoints =
+    points.length >= 3 ? [...leafletPoints, leafletPoints[0]] : leafletPoints;
 
   return (
     <div className="space-y-4">
+      <Card className="p-4 bg-info/10 border-info">
+        <p className="text-sm text-info-foreground">
+          🗺️ <strong>Click on the map</strong> to add boundary points. Add at least 3 points to form your field polygon.
+        </p>
+      </Card>
+
       {/* Map Container */}
       <Card className="overflow-hidden shadow-elevated">
-        <div ref={mapContainer} className="h-96 w-full" />
+        <MapContainer
+          center={[20.5937, 78.9629]}
+          zoom={13}
+          style={{ height: "450px", width: "100%" }}
+          className="z-0"
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <LocationFinder />
+          <MapClickHandler onAddPoint={handleAddPoint} />
+
+          {/* Draw lines between points */}
+          {points.length >= 2 && (
+            <Polyline positions={closedPoints} color="#10b981" weight={3} dashArray="5, 10" />
+          )}
+
+          {/* Draw filled polygon when we have 3+ points */}
+          {points.length >= 3 && (
+            <Polygon
+              positions={closedPoints}
+              pathOptions={{
+                color: "#10b981",
+                fillColor: "#10b981",
+                fillOpacity: 0.3,
+                weight: 3,
+              }}
+            />
+          )}
+        </MapContainer>
+
+        {/* Toolbar */}
+        <div className="absolute top-20 right-4 flex flex-col gap-2 z-[1000]">
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-background/90 backdrop-blur"
+            onClick={undoLastPoint}
+            disabled={points.length === 0}
+          >
+            <Undo className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-background/90 backdrop-blur"
+            onClick={clearAll}
+            disabled={points.length === 0}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       </Card>
 
       {/* Status */}
-      {isMapReady && (
-        <Card className="p-4 bg-card shadow-soft">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <p className="text-sm font-medium text-foreground">Boundary Points</p>
-              <p className="text-xs text-muted-foreground">
-                {coordinates.length === 0
-                  ? "Tap on map to start"
-                  : `${coordinates.length} points added`}
-              </p>
-            </div>
-            {coordinates.length >= 3 && (
-              <span className="px-3 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
-                Ready to save
-              </span>
-            )}
+      <Card className="p-4 bg-card">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">Points Added</p>
+            <p className="text-2xl font-bold text-primary">{points.length}</p>
           </div>
-        </Card>
-      )}
-
-      {/* Controls */}
-      {isMapReady && (
-        <div className="space-y-2">
-          <Button
-            onClick={completeMapping}
-            className="w-full h-12 bg-gradient-primary"
-            disabled={coordinates.length < 3}
-          >
-            <Save className="w-5 h-5 mr-2" />
-            Complete Mapping ({coordinates.length} points)
-          </Button>
-          {coordinates.length > 0 && (
-            <Button onClick={clearMap} variant="outline" className="w-full">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear All Points
-            </Button>
+          {area > 0 && (
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Estimated Area</p>
+              <p className="text-2xl font-bold text-success">{area.toFixed(3)} ha</p>
+            </div>
           )}
         </div>
-      )}
-
-      {/* Instructions */}
-      <Card className="p-3 bg-info/5 border-info/20">
-        <p className="text-xs text-info font-medium mb-1">💡 How to draw:</p>
-        <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
-          <li>Use navigation controls to zoom and pan</li>
-          <li>Tap on map to add corner points of your field</li>
-          <li>Add at least 3 points to form a polygon</li>
-          <li>Points will connect automatically</li>
-        </ul>
       </Card>
+
+      {/* Action Buttons */}
+      <Button
+        onClick={completeMapping}
+        disabled={points.length < 3}
+        className="w-full h-12 bg-gradient-to-r from-success to-success/80"
+      >
+        <Save className="w-5 h-5 mr-2" />
+        Complete Mapping ({points.length} points)
+      </Button>
     </div>
   );
 };
