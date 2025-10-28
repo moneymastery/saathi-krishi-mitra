@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, useMapEvents, Circle, Marker, useMap } from "react-leaflet";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,9 +34,9 @@ function MapClickHandler({ onSetCenter }: { onSetCenter: (lat: number, lng: numb
 function LocationFinder() {
   const map = useMap();
 
-  useState(() => {
+  useEffect(() => {
     map.locate({ setView: true, maxZoom: 16 });
-  });
+  }, [map]);
 
   useMapEvents({
     locationfound: (e) => {
