@@ -14,7 +14,7 @@ import { toast } from "sonner";
 interface FieldTimelineProps {
   fieldId: string;
   events: FieldEvent[];
-  onAddEvent: (event: Omit<FieldEvent, "id" | "timestamp">) => void;
+  onAddEvent: (event: Omit<FieldEvent, "id">) => void;
 }
 
 export const FieldTimeline = ({ fieldId, events, onAddEvent }: FieldTimelineProps) => {
@@ -71,7 +71,8 @@ export const FieldTimeline = ({ fieldId, events, onAddEvent }: FieldTimelineProp
 
     onAddEvent({
       type: newEventType,
-      userId: "current-user", // TODO: Get from auth context
+      timestamp: new Date().toISOString(),
+      userId: "local_user",
       userName: "You",
       description: newEventDescription,
       metadata: {},
@@ -79,7 +80,6 @@ export const FieldTimeline = ({ fieldId, events, onAddEvent }: FieldTimelineProp
 
     setNewEventDescription("");
     setIsAddingEvent(false);
-    toast.success("Event added to timeline");
   };
 
   const sortedEvents = [...events].sort((a, b) => 

@@ -11,6 +11,9 @@ import { PointAndPinMap } from "./mapping/PointAndPinMap";
 import { ImportBoundary } from "./mapping/ImportBoundary";
 import { AutoLocationSquare } from "./mapping/AutoLocationSquare";
 import { FieldDetailsForm } from "./mapping/FieldDetailsForm";
+import { saveField, saveEvent, generateId } from "@/lib/storage";
+import { Field, FieldEvent } from "@/types/field";
+import { toast } from "sonner";
 
 export const FieldMappingView = () => {
   const navigate = useNavigate();
@@ -26,7 +29,61 @@ export const FieldMappingView = () => {
   };
 
   const handleSaveField = (fieldData: any) => {
-    console.log("Field saved:", { ...fieldData, coordinates, area });
+    if (!coordinates) return;
+
+    const fieldId = generateId();
+    const now = new Date().toISOString();
+
+    const field: Field = {
+      id: fieldId,
+      userId: "local_user", // Will be replaced when auth is implemented
+      name: fieldData.name,
+      cropType: fieldData.cropType,
+      variety: fieldData.variety,
+      area: fieldData.area,
+      sowingDate: fieldData.sowingDate,
+      expectedHarvestDate: fieldData.expectedHarvestDate,
+      irrigationMethod: fieldData.irrigationMethod,
+      wateringFrequency: fieldData.wateringFrequency,
+      coordinates: coordinates,
+      geometry: {
+        type: "Polygon",
+        coordinates: [coordinates.map(c => [c[1], c[0]])], // Convert to GeoJSON [lng, lat]
+      },
+      quadrants: [
+        { id: "q1", name: "North-West", ndvi: 0, status: "monitor" },
+        { id: "q2", name: "North-East", ndvi: 0, status: "monitor" },
+        { id: "q3", name: "South-West", ndvi: 0, status: "monitor" },
+        { id: "q4", name: "South-East", ndvi: 0, status: "monitor" }
+      ],
+      analysisHistory: [],
+      createdAt: now,
+      updatedAt: now,
+      editCount: 0,
+      events: [],
+      editAudits: [],
+    };
+
+    saveField(field);
+
+    // Add creation event
+    const creationEvent: FieldEvent = {
+      id: generateId(),
+      type: "created",
+      timestamp: now,
+      userId: "local_user",
+      userName: "You",
+      description: `Field "${fieldData.name}" created with ${fieldData.area.toFixed(2)} hectares mapped`,
+      metadata: {
+        cropType: fieldData.cropType,
+        variety: fieldData.variety,
+        area: fieldData.area,
+      },
+    };
+
+    saveEvent(fieldId, creationEvent);
+
+    toast.success(`Field "${fieldData.name}" saved successfully!`);
     navigate("/soilsati");
   };
 

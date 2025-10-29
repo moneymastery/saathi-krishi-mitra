@@ -1,43 +1,21 @@
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sprout, Plus, TrendingUp, Droplets } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-interface Field {
-  id: string;
-  name: string;
-  cropType: string;
-  area: number;
-  sowingDate: string;
-  health: {
-    ndvi: number;
-    status: "healthy" | "monitor" | "stress";
-  };
-}
-
-// Mock data - will be replaced with real data from Supabase
-const mockFields: Field[] = [
-  {
-    id: "1",
-    name: "Field 1",
-    cropType: "Rice",
-    area: 2.5,
-    sowingDate: "2024-06-21",
-    health: { ndvi: 0.67, status: "healthy" }
-  },
-  {
-    id: "2",
-    name: "Field 2",
-    cropType: "Wheat",
-    area: 1.8,
-    sowingDate: "2024-11-01",
-    health: { ndvi: 0.52, status: "monitor" }
-  }
-];
+import { getAllFields } from "@/lib/storage";
+import { Field } from "@/types/field";
 
 export const MyFieldsList = () => {
   const navigate = useNavigate();
+  const [fields, setFields] = useState<Field[]>([]);
+
+  useEffect(() => {
+    // Load fields from localStorage
+    const loadedFields = getAllFields();
+    setFields(loadedFields);
+  }, []);
 
   const getHealthColor = (status: string) => {
     switch (status) {
@@ -70,7 +48,7 @@ export const MyFieldsList = () => {
         </Button>
       </div>
 
-      {mockFields.length === 0 ? (
+      {fields.length === 0 ? (
         <Card className="p-8 text-center bg-card/50">
           <Sprout className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-semibold mb-2">No Fields Yet</h3>
@@ -87,7 +65,7 @@ export const MyFieldsList = () => {
         </Card>
       ) : (
         <div className="space-y-3">
-          {mockFields.map((field) => (
+          {fields.map((field) => (
             <Card 
               key={field.id}
               className="p-4 bg-card hover:shadow-lg transition-shadow cursor-pointer"
@@ -98,8 +76,8 @@ export const MyFieldsList = () => {
                   <h3 className="text-lg font-semibold text-foreground">{field.name}</h3>
                   <p className="text-sm text-muted-foreground">🌾 {field.cropType}</p>
                 </div>
-                <Badge className={getHealthColor(field.health.status)}>
-                  {getHealthLabel(field.health.status)}
+                <Badge className={getHealthColor(field.currentHealth?.status || "monitor")}>
+                  {getHealthLabel(field.currentHealth?.status || "monitor")}
                 </Badge>
               </div>
 
@@ -113,7 +91,9 @@ export const MyFieldsList = () => {
                     <TrendingUp className="w-3 h-3 text-success" />
                     <p className="text-xs text-muted-foreground">NDVI</p>
                   </div>
-                  <p className="text-sm font-semibold">{field.health.ndvi.toFixed(2)}</p>
+                  <p className="text-sm font-semibold">
+                    {field.currentHealth?.ndvi ? field.currentHealth.ndvi.toFixed(2) : "N/A"}
+                  </p>
                 </div>
                 <div className="text-center p-2 bg-muted/30 rounded">
                   <div className="flex items-center justify-center gap-1 mb-1">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,54 +14,57 @@ import { ExportShareDialog } from "./ExportShareDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Share2, Download } from "lucide-react";
 import { Field, FieldEvent } from "@/types/field";
-
-// Mock field data - will be replaced with real Supabase data
-const mockFieldData = {
-  id: "1",
-  name: "Field 1",
-  cropType: "Rice",
-  variety: "IR-64",
-  area: 2.5,
-  sowingDate: "2024-06-21",
-  expectedHarvestDate: "2024-11-18",
-  irrigationMethod: "Drip",
-  wateringFrequency: "Every 3 days",
-  coordinates: [[28.368717, 77.540933], [28.368989, 77.540859], [28.369041, 77.541089], [28.368791, 77.541176]],
-  health: {
-    ndvi: 0.67,
-    msavi: 0.60,
-    msavi2: 0.62,
-    ndre: 0.49,
-    ndmi: 0.24,
-    ndwi: 0.35,
-    rsm: 0.42,
-    rvi: 2.40,
-    soc_vis: 0.35,
-    status: "healthy",
-    
-    // NPK (optional - only show if confidence > 0.7)
-    nitrogen: 2.8,
-    phosphorus: 0.4,
-    potassium: 1.9,
-    npk_confidence: 0.75,
-  },
-  quadrants: [
-    { id: "q1", name: "North-West", ndvi: 0.72, status: "healthy" as const },
-    { id: "q2", name: "North-East", ndvi: 0.68, status: "healthy" as const },
-    { id: "q3", name: "South-West", ndvi: 0.58, status: "monitor" as const },
-    { id: "q4", name: "South-East", ndvi: 0.70, status: "healthy" as const }
-  ]
-};
+import { getFieldById, getEventsForField, saveEvent, generateId } from "@/lib/storage";
+import { toast } from "sonner";
 
 export const FieldDetailsDashboard = () => {
   const navigate = useNavigate();
   const { fieldId } = useParams();
+  const [field, setField] = useState<Field | null>(null);
+  const [events, setEvents] = useState<FieldEvent[]>([]);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const field = mockFieldData; // Replace with actual data fetch
+  useEffect(() => {
+    if (!fieldId) {
+      toast.error("Field ID not provided");
+      navigate("/soilsati");
+      return;
+    }
+
+    const loadedField = getFieldById(fieldId);
+    if (!loadedField) {
+      toast.error("Field not found");
+      navigate("/soilsati");
+      return;
+    }
+
+    setField(loadedField);
+    setEvents(getEventsForField(fieldId));
+  }, [fieldId, navigate]);
+
+  const handleAddEvent = (event: Omit<FieldEvent, "id">) => {
+    if (!fieldId) return;
+
+    const newEvent: FieldEvent = {
+      ...event,
+      id: generateId(),
+    };
+
+    saveEvent(fieldId, newEvent);
+    setEvents(getEventsForField(fieldId));
+    toast.success("Event added to timeline");
+  };
+
+  if (!field) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <p className="text-muted-foreground">Loading field data...</p>
+      </div>
+    );
+  }
 
   const growthDays = Math.floor((Date.now() - new Date(field.sowingDate).getTime()) / (1000 * 60 * 60 * 24));
   const harvestDays = Math.floor((new Date(field.expectedHarvestDate).getTime() - new Date(field.sowingDate).getTime()) / (1000 * 60 * 60 * 24));
@@ -161,13 +164,15 @@ export const FieldDetailsDashboard = () => {
         </div>
 
         {/* Vegetation Indices */}
-        <div className="px-6 mb-4">
-        <VegetationIndicesGrid 
-          indices={field.health}
-          playAudio={playAudio}
-          playingAudio={playingAudio}
-        />
-        </div>
+        {field.currentHealth && (
+          <div className="px-6 mb-4">
+            <VegetationIndicesGrid 
+              indices={field.currentHealth}
+              playAudio={playAudio}
+              playingAudio={playingAudio}
+            />
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="px-6 space-y-3">
@@ -213,8 +218,8 @@ export const FieldDetailsDashboard = () => {
           <TabsContent value="timeline">
             <FieldTimeline 
               fieldId={field.id}
-              events={[]}
-              onAddEvent={(event) => console.log("Add event:", event)}
+              events={events}
+              onAddEvent={handleAddEvent}
             />
           </TabsContent>
 
