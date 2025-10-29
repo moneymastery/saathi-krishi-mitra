@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Camera, Upload, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DiseaseResultCard } from "./DiseaseResultCard";
+import { saveDiseasesScan, generateId } from "@/lib/storage";
+import { toast } from "sonner";
 
 export const DiseaseDetectionView = () => {
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ export const DiseaseDetectionView = () => {
     
     // TODO: Replace with actual API call
     setTimeout(() => {
-      setDiagnosisResult({
+      const result = {
         disease_name: "Early Blight",
         confidence: 0.95,
         disease_stage: "Moderate",
@@ -106,7 +108,19 @@ export const DiseaseDetectionView = () => {
         spread_risk: "High",
         recovery_chance: "Good",
         model_version: "gemini-1.5-flash"
+      };
+      
+      setDiagnosisResult(result);
+      
+      // Save to localStorage
+      saveDiseasesScan({
+        id: generateId(),
+        timestamp: new Date().toISOString(),
+        imageUrl: selectedImage!,
+        result
       });
+      
+      toast.success("Disease scan saved to history");
       setIsAnalyzing(false);
     }, 2000);
   };

@@ -225,3 +225,71 @@ export const clearAllData = (): void => {
     localStorage.removeItem(key);
   });
 };
+
+// ==================== DISEASE SCANS ====================
+
+export interface DiseaseScan {
+  id: string;
+  timestamp: string;
+  imageUrl: string;
+  fieldId?: string;
+  result: any;
+}
+
+export const saveDiseaseScans = (scans: DiseaseScan[]): void => {
+  localStorage.setItem('soilsaathi_disease_scans', JSON.stringify(scans));
+};
+
+export const getAllDiseaseScans = (): DiseaseScan[] => {
+  const data = localStorage.getItem('soilsaathi_disease_scans');
+  if (!data) return [];
+  
+  try {
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error parsing disease scans from storage:', error);
+    return [];
+  }
+};
+
+export const saveDiseasesScan = (scan: DiseaseScan): void => {
+  const scans = getAllDiseaseScans();
+  scans.push(scan);
+  saveDiseaseScans(scans);
+};
+
+// ==================== YIELD PREDICTIONS ====================
+
+export interface YieldPrediction {
+  id: string;
+  fieldId: string;
+  timestamp: string;
+  prediction: any;
+}
+
+export const saveYieldPredictions = (predictions: YieldPrediction[]): void => {
+  localStorage.setItem('soilsaathi_yield_predictions', JSON.stringify(predictions));
+};
+
+export const getAllYieldPredictions = (): YieldPrediction[] => {
+  const data = localStorage.getItem('soilsaathi_yield_predictions');
+  if (!data) return [];
+  
+  try {
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error parsing yield predictions from storage:', error);
+    return [];
+  }
+};
+
+export const saveYieldPrediction = (prediction: YieldPrediction): void => {
+  const predictions = getAllYieldPredictions();
+  predictions.push(prediction);
+  saveYieldPredictions(predictions);
+};
+
+export const getYieldPredictionsForField = (fieldId: string): YieldPrediction[] => {
+  const predictions = getAllYieldPredictions();
+  return predictions.filter(p => p.fieldId === fieldId);
+};

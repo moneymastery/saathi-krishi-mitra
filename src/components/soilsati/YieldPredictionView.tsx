@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, TrendingUp, AlertCircle, Volume2 } from "lucide-react";
+import { saveYieldPrediction, generateId } from "@/lib/storage";
+import { toast } from "sonner";
 
 interface YieldPredictionProps {
   fieldId: string;
@@ -51,6 +53,16 @@ export const YieldPredictionView = ({
       
       const result = await response.json();
       setPrediction(result);
+      
+      // Save to localStorage
+      saveYieldPrediction({
+        id: generateId(),
+        fieldId,
+        timestamp: new Date().toISOString(),
+        prediction: result
+      });
+      
+      toast.success("Yield prediction saved to field history");
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
